@@ -1,0 +1,36 @@
+# ===============================
+# SENSA-NOISE - .gitignore
+# ===============================
+
+# --- Sensitive configuration ---
+firmware/esp32/config.h
+
+# --- Arduino / ESP32 build files ---
+*.bin
+*.elf
+*.hex
+*.map
+*.o
+*.a
+*.d
+*.out
+
+# --- Arduino IDE ---
+*.ino~
+*.cpp~
+*.h~
+
+# --- VS Code ---
+.vscode/
+*.code-workspace
+
+# --- Python ---
+__pycache__/
+*.pyc
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
