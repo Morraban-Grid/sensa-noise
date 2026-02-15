@@ -34,3 +34,6 @@ Thumbs.db
 
 # --- Logs ---
 *.log
+
+ai/model.pkl
+ai/__pycache__/
