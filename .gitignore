@@ -37,3 +37,8 @@ Thumbs.db
 
 ai/model.pkl
 ai/__pycache__/
+
+venv
+
+# Ignore firmware credentials
+firmware/esp32/config.h
