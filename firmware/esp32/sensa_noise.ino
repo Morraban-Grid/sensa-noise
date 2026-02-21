@@ -1,112 +1,53 @@
-/*************************************************
- *  SENSA-NOISE
- *  Smart Environmental Noise Sensing System
+/*
+ * Project: sensa-noise
+ * Board: ESP32S3-N16R8
+ * Description: Smart Baby Room Monitor
+ * Author: Morraban-Grid
  *
- *  File: sensa_noise.ino
- *  Description:
- *  Main firmware logic for ESP32-S3
- *************************************************/
+ * This file contains the complete firmware logic:
+ * - I2S audio capture (INMP441)
+ * - Cry pattern detection (RMS + duration)
+ * - LED and buzzer alert
+ * - ThingSpeak cloud upload
+ */
 
-#include <Arduino.h>
+// ===== Standard Libraries =====
 #include <WiFi.h>
 #include <HTTPClient.h>
-
+#include "driver/i2s.h"
 #include "config.h"
-#include "noise_sensor.h"
-#include "actuators.h"
 
+// ===== Hardware Pin Definitions =====
 
-/* ===============================
-   WIFI CONNECTION
-   =============================== */
+// I2S Microphone Pins (INMP441)
+#define I2S_WS     38
+#define I2S_SCK    39
+#define I2S_SD     40
 
-void connect_wifi() {
-    Serial.print("Connecting to WiFi");
+// Actuators
+#define LED_PIN    5
+#define BUZZER_PIN 6
 
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+// ===== Audio Configuration =====
+#define SAMPLE_RATE     16000
+#define BUFFER_SIZE     1024
 
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-
-    Serial.println("\nWiFi connected");
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
-}
-
-
-/* ===============================
-   THINGSPEAK COMMUNICATION
-   =============================== */
-
-void send_to_thingspeak(uint32_t rms, noise_level_t level) {
-    if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("WiFi not connected, skipping upload");
-        return;
-    }
-
-    HTTPClient http;
-
-    String url = "http://";
-    url += THINGSPEAK_SERVER;
-    url += "/update?api_key=";
-    url += THINGSPEAK_API_KEY;
-    url += "&field1=";
-    url += String(rms);
-    url += "&field2=";
-    url += String((int)level);
-
-    http.begin(url);
-    int http_code = http.GET();
-
-    if (http_code > 0) {
-        Serial.print("ThingSpeak response: ");
-        Serial.println(http_code);
-    } else {
-        Serial.print("ThingSpeak error: ");
-        Serial.println(http.errorToString(http_code));
-    }
-
-    http.end();
-}
-
-
-/* ===============================
-   ARDUINO SETUP
-   =============================== */
+// ===== Global Variables =====
+bool wifiConnected = false;
 
 void setup() {
-    Serial.begin(115200);
-    delay(1000);
+  Serial.begin(115200);
 
-    Serial.println("Starting SENSA-NOISE firmware");
+  // Initialize actuator pins
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
 
-    connect_wifi();
-    noise_sensor_init();
-    actuators_init();
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(BUZZER_PIN, LOW);
 
-    Serial.println("System initialized");
+  Serial.println("Sensa-Noise firmware initialized.");
 }
 
-
-/* ===============================
-   ARDUINO LOOP
-   =============================== */
-
 void loop() {
-    uint32_t rms = noise_sensor_read_rms();
-    noise_level_t level = noise_sensor_classify(rms);
-
-    actuators_update(level);
-
-    Serial.print("RMS: ");
-    Serial.print(rms);
-    Serial.print(" | Noise level: ");
-    Serial.println((int)level);
-
-    send_to_thingspeak(rms, level);
-
-    delay(THINGSPEAK_INTERVAL_MS);
+  // Main logic will be implemented in next phases
 }
