@@ -73,6 +73,22 @@ void initI2S() {
   Serial.println("I2S microphone initialized.");
 }
 
+// ===== Audio Capture =====
+size_t readAudioBuffer() {
+
+  size_t bytesRead = 0;
+
+  i2s_read(
+    I2S_PORT,
+    (void*)audioBuffer,
+    sizeof(audioBuffer),
+    &bytesRead,
+    portMAX_DELAY
+  );
+
+  return bytesRead;
+}
+
 void setup() {
   Serial.begin(115200);
 
