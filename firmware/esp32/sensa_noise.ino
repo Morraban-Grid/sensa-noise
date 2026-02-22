@@ -158,6 +158,37 @@ bool connectWiFi() {
   }
 }
 
+// ===== ThingSpeak Upload =====
+bool sendToThingSpeak(int value) {
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi not connected. Skipping upload.");
+    return false;
+  }
+
+  HTTPClient http;
+
+  String url = String(THINGSPEAK_HOST) +
+               "/update?api_key=" +
+               THINGSPEAK_API_KEY +
+               "&field1=" +
+               String(value);
+
+  http.begin(url);
+  int httpCode = http.GET();
+
+  if (httpCode == 200) {
+    Serial.println("ThingSpeak upload successful.");
+    http.end();
+    return true;
+  } else {
+    Serial.print("ThingSpeak upload failed. HTTP code: ");
+    Serial.println(httpCode);
+    http.end();
+    return false;
+  }
+}
+
 // ===== Setup =====
 void setup() {
 
@@ -197,7 +228,11 @@ void loop() {
 
       if (millis() - soundStartTime > CRY_DURATION_THRESHOLD) {
         Serial.println("Cry event detected!");
+      
         triggerAlert();
+      
+        sendToThingSpeak(1);  // Send event flag
+      
         soundActive = false;
       }
 
