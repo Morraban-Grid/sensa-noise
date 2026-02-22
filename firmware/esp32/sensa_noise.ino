@@ -116,6 +116,7 @@ float computeRMS(int32_t* buffer, size_t size) {
   return rms;
 }
 
+// ===== Setup =====
 void setup() {
   Serial.begin(115200);
 
