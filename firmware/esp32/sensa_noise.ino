@@ -18,18 +18,26 @@
 
 // ===== Hardware Pin Definitions =====
 
-// I2S Microphone Pins (INMP441)
-#define I2S_WS     38
-#define I2S_SCK    39
-#define I2S_SD     40
+// INMP441 I2S Microphone
+#define I2S_WS     38   // Word Select
+#define I2S_SCK    39   // Serial Clock
+#define I2S_SD     40   // Serial Data (from mic)
 
 // Actuators
 #define LED_PIN    5
 #define BUZZER_PIN 6
 
 // ===== Audio Configuration =====
-#define SAMPLE_RATE     16000
-#define BUFFER_SIZE     1024
+#define SAMPLE_RATE     16000      // 16 kHz
+#define BUFFER_SIZE     1024       // Samples per read
+#define I2S_PORT        I2S_NUM_0
+
+// ===== Detection Thresholds (initial values) =====
+#define RMS_THRESHOLD           800000.0
+#define CRY_DURATION_THRESHOLD  1500     // milliseconds
+
+// ===== Global Buffers =====
+int32_t audioBuffer[BUFFER_SIZE];
 
 // ===== Global Variables =====
 bool wifiConnected = false;
