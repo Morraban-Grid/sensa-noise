@@ -94,6 +94,22 @@ size_t readAudioBuffer() {
   return bytesRead;
 }
 
+// ===== Alert Trigger =====
+void triggerAlert() {
+
+  Serial.println("Triggering alert...");
+
+  digitalWrite(LED_PIN, HIGH);
+  digitalWrite(BUZZER_PIN, HIGH);
+
+  delay(2000);  // 2 seconds alert duration
+
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  Serial.println("Alert finished.");
+}
+
 // ===== RMS Calculation =====
 float computeRMS(int32_t* buffer, size_t size) {
 
@@ -151,6 +167,8 @@ void loop() {
       // Check duration
       if (millis() - soundStartTime > CRY_DURATION_THRESHOLD) {
         Serial.println("Cry event detected!");
+        triggerAlert();
+        soundActive = false;  // Reset state after alert
       }
 
     } else {
