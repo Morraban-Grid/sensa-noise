@@ -7,7 +7,7 @@
  * - I2S audio capture (INMP441)
  * - Cry detection (RMS + duration)
  * - LED + buzzer alert
- * - ThingSpeak upload
+ * - ThingSpeak upload (future phase)
  */
 
 // ===== Required Libraries =====
@@ -20,22 +20,22 @@
 // ===== Hardware Pin Definitions =====
 
 // INMP441 I2S Microphone
-#define I2S_WS     38   // Word Select
-#define I2S_SCK    39   // Serial Clock
-#define I2S_SD     40   // Serial Data (from mic)
+#define I2S_WS     38
+#define I2S_SCK    39
+#define I2S_SD     40
 
 // Actuators
 #define LED_PIN    5
 #define BUZZER_PIN 6
 
 // ===== Audio Configuration =====
-#define SAMPLE_RATE     16000      // 16 kHz
-#define BUFFER_SIZE     1024       // Samples per read
+#define SAMPLE_RATE     16000
+#define BUFFER_SIZE     1024
 #define I2S_PORT        I2S_NUM_0
 
-// ===== Detection Thresholds (initial values) =====
+// ===== Detection Thresholds =====
 #define RMS_THRESHOLD           800000.0
-#define CRY_DURATION_THRESHOLD  1500     // milliseconds
+#define CRY_DURATION_THRESHOLD  1500  // milliseconds
 
 // ===== Global Buffers =====
 int32_t audioBuffer[BUFFER_SIZE];
@@ -43,9 +43,6 @@ int32_t audioBuffer[BUFFER_SIZE];
 // ===== Detection State =====
 unsigned long soundStartTime = 0;
 bool soundActive = false;
-
-// ===== Global Variables =====
-bool wifiConnected = false;
 
 // ===== I2S Initialization =====
 void initI2S() {
@@ -79,7 +76,7 @@ void initI2S() {
 }
 
 // ===== Audio Capture =====
-size_t readAudioBuffer() {
+size_t readAudioBuffer(size_t* samplesRead) {
 
   size_t bytesRead = 0;
 
@@ -91,7 +88,29 @@ size_t readAudioBuffer() {
     portMAX_DELAY
   );
 
+  *samplesRead = bytesRead / sizeof(int32_t);
+
   return bytesRead;
+}
+
+// ===== RMS Calculation =====
+float computeRMS(int32_t* buffer, size_t size) {
+
+  if (size == 0) return 0.0;
+
+  double sum = 0.0;
+
+  for (size_t i = 0; i < size; i++) {
+
+    // INMP441 provides 24-bit data in 32-bit container
+    int32_t sample = buffer[i] >> 8;  // normalize
+
+    float fsample = (float)sample;
+    sum += fsample * fsample;
+  }
+
+  double mean = sum / size;
+  return sqrt(mean);
 }
 
 // ===== Alert Trigger =====
@@ -102,7 +121,7 @@ void triggerAlert() {
   digitalWrite(LED_PIN, HIGH);
   digitalWrite(BUZZER_PIN, HIGH);
 
-  delay(2000);  // 2 seconds alert duration
+  delay(2000);
 
   digitalWrite(LED_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
@@ -110,33 +129,11 @@ void triggerAlert() {
   Serial.println("Alert finished.");
 }
 
-// ===== RMS Calculation =====
-float computeRMS(int32_t* buffer, size_t size) {
-
-  double sum = 0.0;
-
-  for (size_t i = 0; i < size; i++) {
-    // Convert raw 32-bit sample to float
-    float sample = (float)buffer[i];
-
-    // Accumulate squared value (energy)
-    sum += sample * sample;
-  }
-
-  // Mean of squared samples
-  double mean = sum / size;
-
-  // Root Mean Square
-  float rms = sqrt(mean);
-
-  return rms;
-}
-
 // ===== Setup =====
 void setup() {
+
   Serial.begin(115200);
 
-  // Initialize actuator pins
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
 
@@ -151,11 +148,12 @@ void setup() {
 // ===== Main Loop =====
 void loop() {
 
-  size_t bytesRead = readAudioBuffer();
+  size_t samplesRead = 0;
+  readAudioBuffer(&samplesRead);
 
-  if (bytesRead > 0) {
+  if (samplesRead > 0) {
 
-    float rms = computeRMS(audioBuffer, BUFFER_SIZE);
+    float rms = computeRMS(audioBuffer, samplesRead);
 
     if (rms > RMS_THRESHOLD) {
 
@@ -164,11 +162,10 @@ void loop() {
         soundStartTime = millis();
       }
 
-      // Check duration
       if (millis() - soundStartTime > CRY_DURATION_THRESHOLD) {
         Serial.println("Cry event detected!");
         triggerAlert();
-        soundActive = false;  // Reset state after alert
+        soundActive = false;
       }
 
     } else {
