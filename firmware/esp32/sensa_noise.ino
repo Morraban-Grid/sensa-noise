@@ -7,7 +7,7 @@
  * - I2S audio capture (INMP441)
  * - Cry detection (RMS + duration)
  * - LED + buzzer alert
- * - ThingSpeak upload (future phase)
+ * - ThingSpeak upload
  */
 
 // ===== Required Libraries =====
@@ -36,6 +36,17 @@
 // ===== Detection Thresholds =====
 #define RMS_THRESHOLD           800000.0
 #define CRY_DURATION_THRESHOLD  1500  // milliseconds
+
+// ===== Debug Control =====
+#define DEBUG_MODE true   // Set to false for production
+
+#if DEBUG_MODE
+  #define DEBUG_PRINT(x)    Serial.print(x)
+  #define DEBUG_PRINTLN(x)  Serial.println(x)
+#else
+  #define DEBUG_PRINT(x)
+  #define DEBUG_PRINTLN(x)
+#endif
 
 // ===== Global Buffers =====
 int32_t audioBuffer[BUFFER_SIZE];
@@ -72,7 +83,7 @@ void initI2S() {
   i2s_set_pin(I2S_PORT, &pin_config);
   i2s_zero_dma_buffer(I2S_PORT);
 
-  Serial.println("I2S microphone initialized.");
+  DEBUG_PRINTLN("I2S microphone initialized.");
 }
 
 // ===== Audio Capture =====
@@ -102,9 +113,7 @@ float computeRMS(int32_t* buffer, size_t size) {
 
   for (size_t i = 0; i < size; i++) {
 
-    // INMP441 provides 24-bit data in 32-bit container
-    int32_t sample = buffer[i] >> 8;  // normalize
-
+    int32_t sample = buffer[i] >> 8;  // Normalize 24-bit data
     float fsample = (float)sample;
     sum += fsample * fsample;
   }
@@ -116,7 +125,7 @@ float computeRMS(int32_t* buffer, size_t size) {
 // ===== Alert Trigger =====
 void triggerAlert() {
 
-  Serial.println("Triggering alert...");
+  DEBUG_PRINTLN("Triggering alert...");
 
   digitalWrite(LED_PIN, HIGH);
   digitalWrite(BUZZER_PIN, HIGH);
@@ -126,33 +135,33 @@ void triggerAlert() {
   digitalWrite(LED_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
 
-  Serial.println("Alert finished.");
+  DEBUG_PRINTLN("Alert finished.");
 }
 
 // ===== WiFi Connection =====
 bool connectWiFi() {
 
-  Serial.println("Connecting to WiFi...");
+  DEBUG_PRINTLN("Connecting to WiFi...");
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   unsigned long startAttemptTime = millis();
-  const unsigned long timeout = 15000; // 15 seconds
+  const unsigned long timeout = 15000;
 
   while (WiFi.status() != WL_CONNECTED &&
          millis() - startAttemptTime < timeout) {
     delay(500);
-    Serial.print(".");
+    DEBUG_PRINT(".");
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi connected.");
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
+    DEBUG_PRINTLN("\nWiFi connected.");
+    DEBUG_PRINT("IP address: ");
+    DEBUG_PRINTLN(WiFi.localIP());
     return true;
   } else {
-    Serial.println("\nWiFi connection FAILED.");
+    DEBUG_PRINTLN("\nWiFi connection FAILED.");
     WiFi.disconnect(true);
     return false;
   }
@@ -162,7 +171,7 @@ bool connectWiFi() {
 bool sendToThingSpeak(int value) {
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected. Skipping upload.");
+    DEBUG_PRINTLN("WiFi not connected. Skipping upload.");
     return false;
   }
 
@@ -178,12 +187,12 @@ bool sendToThingSpeak(int value) {
   int httpCode = http.GET();
 
   if (httpCode == 200) {
-    Serial.println("ThingSpeak upload successful.");
+    DEBUG_PRINTLN("ThingSpeak upload successful.");
     http.end();
     return true;
   } else {
-    Serial.print("ThingSpeak upload failed. HTTP code: ");
-    Serial.println(httpCode);
+    DEBUG_PRINT("ThingSpeak upload failed. HTTP code: ");
+    DEBUG_PRINTLN(httpCode);
     http.end();
     return false;
   }
@@ -203,10 +212,10 @@ void setup() {
   initI2S();
 
   if (!connectWiFi()) {
-    Serial.println("System will continue without cloud connectivity.");
+    DEBUG_PRINTLN("System will continue without cloud connectivity.");
   }
 
-  Serial.println("Sensa-Noise firmware initialized.");
+  DEBUG_PRINTLN("Sensa-Noise firmware initialized.");
 }
 
 // ===== Main Loop =====
@@ -214,17 +223,17 @@ void loop() {
 
   size_t samplesRead = 0;
 
-  // Read audio buffer
   readAudioBuffer(&samplesRead);
 
   if (samplesRead == 0) {
     return;
   }
 
-  // Compute RMS
   float rms = computeRMS(audioBuffer, samplesRead);
 
-  // Duration-based detection
+  DEBUG_PRINT("RMS: ");
+  DEBUG_PRINTLN(rms);
+
   if (rms > RMS_THRESHOLD) {
 
     if (!soundActive) {
@@ -236,15 +245,11 @@ void loop() {
 
     if (elapsed > CRY_DURATION_THRESHOLD) {
 
-      Serial.println("Cry event detected.");
+      DEBUG_PRINTLN("Cry event detected.");
 
-      // Trigger actuators
       triggerAlert();
-
-      // Send event to cloud
       sendToThingSpeak(1);
 
-      // Reset detection state
       soundActive = false;
     }
 
