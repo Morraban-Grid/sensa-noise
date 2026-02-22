@@ -40,6 +40,10 @@
 // ===== Global Buffers =====
 int32_t audioBuffer[BUFFER_SIZE];
 
+// ===== Detection State =====
+unsigned long soundStartTime = 0;
+bool soundActive = false;
+
 // ===== Global Variables =====
 bool wifiConnected = false;
 
@@ -127,6 +131,29 @@ void setup() {
   Serial.println("Sensa-Noise firmware initialized.");
 }
 
+// ===== Main Loop =====
 void loop() {
-  // Main logic will be implemented in next phases
+
+  size_t bytesRead = readAudioBuffer();
+
+  if (bytesRead > 0) {
+
+    float rms = computeRMS(audioBuffer, BUFFER_SIZE);
+
+    if (rms > RMS_THRESHOLD) {
+
+      if (!soundActive) {
+        soundActive = true;
+        soundStartTime = millis();
+      }
+
+      // Check duration
+      if (millis() - soundStartTime > CRY_DURATION_THRESHOLD) {
+        Serial.println("Cry event detected!");
+      }
+
+    } else {
+      soundActive = false;
+    }
+  }
 }
