@@ -147,6 +147,7 @@ Add:
 #define THINGSPEAK_API_KEY "YOUR_WRITE_API_KEY"
 
 #endif
+```
 
 ⚠ SECURITY RULES
 
