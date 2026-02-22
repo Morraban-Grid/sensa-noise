@@ -213,31 +213,42 @@ void setup() {
 void loop() {
 
   size_t samplesRead = 0;
+
+  // Read audio buffer
   readAudioBuffer(&samplesRead);
 
-  if (samplesRead > 0) {
+  if (samplesRead == 0) {
+    return;
+  }
 
-    float rms = computeRMS(audioBuffer, samplesRead);
+  // Compute RMS
+  float rms = computeRMS(audioBuffer, samplesRead);
 
-    if (rms > RMS_THRESHOLD) {
+  // Duration-based detection
+  if (rms > RMS_THRESHOLD) {
 
-      if (!soundActive) {
-        soundActive = true;
-        soundStartTime = millis();
-      }
+    if (!soundActive) {
+      soundActive = true;
+      soundStartTime = millis();
+    }
 
-      if (millis() - soundStartTime > CRY_DURATION_THRESHOLD) {
-        Serial.println("Cry event detected!");
-      
-        triggerAlert();
-      
-        sendToThingSpeak(1);  // Send event flag
-      
-        soundActive = false;
-      }
+    unsigned long elapsed = millis() - soundStartTime;
 
-    } else {
+    if (elapsed > CRY_DURATION_THRESHOLD) {
+
+      Serial.println("Cry event detected.");
+
+      // Trigger actuators
+      triggerAlert();
+
+      // Send event to cloud
+      sendToThingSpeak(1);
+
+      // Reset detection state
       soundActive = false;
     }
+
+  } else {
+    soundActive = false;
   }
 }
