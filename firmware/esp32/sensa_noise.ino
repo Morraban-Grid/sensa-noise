@@ -1,17 +1,16 @@
 /*
  * Project: sensa-noise
  * Board: ESP32S3-N16R8
- * Description: Smart Baby Room Monitor
  * Author: Morraban-Grid
  *
- * This file contains the complete firmware logic:
+ * Firmware responsibilities:
  * - I2S audio capture (INMP441)
- * - Cry pattern detection (RMS + duration)
- * - LED and buzzer alert
- * - ThingSpeak cloud upload
+ * - Cry detection (RMS + duration)
+ * - LED + buzzer alert
+ * - ThingSpeak upload
  */
 
-// ===== Standard Libraries =====
+// ===== Required Libraries =====
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "driver/i2s.h"
