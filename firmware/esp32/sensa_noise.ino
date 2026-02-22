@@ -15,6 +15,7 @@
 #include <HTTPClient.h>
 #include "driver/i2s.h"
 #include "config.h"
+#include <math.h>
 
 // ===== Hardware Pin Definitions =====
 
@@ -87,6 +88,28 @@ size_t readAudioBuffer() {
   );
 
   return bytesRead;
+}
+
+// ===== RMS Calculation =====
+float computeRMS(int32_t* buffer, size_t size) {
+
+  double sum = 0.0;
+
+  for (size_t i = 0; i < size; i++) {
+    // Convert raw 32-bit sample to float
+    float sample = (float)buffer[i];
+
+    // Accumulate squared value (energy)
+    sum += sample * sample;
+  }
+
+  // Mean of squared samples
+  double mean = sum / size;
+
+  // Root Mean Square
+  float rms = sqrt(mean);
+
+  return rms;
 }
 
 void setup() {
