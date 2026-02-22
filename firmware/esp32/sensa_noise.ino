@@ -129,6 +129,35 @@ void triggerAlert() {
   Serial.println("Alert finished.");
 }
 
+// ===== WiFi Connection =====
+bool connectWiFi() {
+
+  Serial.println("Connecting to WiFi...");
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  unsigned long startAttemptTime = millis();
+  const unsigned long timeout = 15000; // 15 seconds
+
+  while (WiFi.status() != WL_CONNECTED &&
+         millis() - startAttemptTime < timeout) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nWiFi connected.");
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+    return true;
+  } else {
+    Serial.println("\nWiFi connection FAILED.");
+    WiFi.disconnect(true);
+    return false;
+  }
+}
+
 // ===== Setup =====
 void setup() {
 
@@ -141,6 +170,10 @@ void setup() {
   digitalWrite(BUZZER_PIN, LOW);
 
   initI2S();
+
+  if (!connectWiFi()) {
+    Serial.println("System will continue without cloud connectivity.");
+  }
 
   Serial.println("Sensa-Noise firmware initialized.");
 }
