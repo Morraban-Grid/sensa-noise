@@ -157,7 +157,7 @@ Ensure config.h is listed in .gitignore
 
 Never expose API keys publicly
 
-6. Data Format Sent by ESP32
+# 6. Data Format Sent by ESP32
 
 When a cry event is detected:
 
@@ -175,7 +175,7 @@ field3 → Duration
 
 field4 → Frequency band energy
 
-7. Verify Data Upload
+# 7. Verify Data Upload
 
 After uploading firmware:
 
@@ -195,7 +195,7 @@ Check API key
 
 Verify HTTP response code in Serial Monitor
 
-8. Download Data for AI Analysis
+# 8. Download Data for AI Analysis
 
 Use:
 
@@ -213,7 +213,7 @@ Convert to pandas DataFrame
 
 Plot cry detection events
 
-9. Rate Limits
+# 9. Rate Limits
 
 ThingSpeak Free Tier Limits:
 
@@ -223,7 +223,7 @@ Limited message count per year
 
 Ensure the firmware does not spam events.
 
-10. Future Improvements
+# 10. Future Improvements
 
 Possible cloud upgrades:
 
@@ -237,7 +237,7 @@ Add mobile dashboard
 
 Real-time push notifications
 
-11. Security Best Practices
+# 11. Security Best Practices
 
 Mandatory:
 
